@@ -1,0 +1,63 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI-CD
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  CI:
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # uses: docker/login-action@42d299face0c5c43a0487c477f595ac9cf22f1a7
+      - name: Docker Login
+        uses: docker/login-action@v1.12.0
+        with:
+          # Server address of Docker registry. If not set then will default to Docker Hub
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_PWD }}
+          
+    # Build and push
+      - name: Docker Build and push
+        uses: docker/build-push-action@v2.8.0
+        with:
+          context: ./conversao-temperatura/src
+          file: ./conversao-temperatura/src/Dockerfile
+          push: true
+          tags: |
+            dockerribeiro/conversao-temperatura:latest
+            dockerribeiro/conversao-temperatura:${{ github.run_number }}
+  CD:
+    needs: [CI]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+      
+      # https://github.com/marketplace/actions/kubernetes-set-context
+      - name: Kubernetes Set Context
+        uses: Azure/k8s-set-context@v2
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBECONFIG_CONV_TEMP }} # kube config vem dos documentos da digitalocena
+          
+      #https://github.com/marketplace/actions/deploy-to-kubernetes-cluster
+      - name: Deploy to Kubernetes cluster
+        uses: Azure/k8s-deploy@v1.5
+        with:
+          images: dockerribeiro/conversao-temperatura:${{ github.run_number }}
+          manifests: |
+            ./conversao-temperatura/k8s/deployment.yaml
+            
