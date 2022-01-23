@@ -51,5 +51,15 @@ jobs:
         uses: Azure/k8s-set-context@v2
         with:
           method: kubeconfig
-          kubeconfig: ${{ secrets.KUBECONFIG }}
-
+          kubeconfig: ${{ secrets.KUBECONFIG }} # kube config vem dos documentos da digitalocena
+          
+      #https://github.com/marketplace/actions/deploy-to-kubernetes-cluster
+      - name: Deploy to Kubernetes cluster
+        uses: Azure/k8s-deploy@v1.5
+        with:
+          images: dockerribeiro/rotten-potatoes:${{ github.run_number }}
+          manifests: |
+            ./rotten-potatoes/kubernetes/deployment.yaml
+            
+            
+            
