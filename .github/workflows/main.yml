@@ -28,3 +28,14 @@ jobs:
           # Server address of Docker registry. If not set then will default to Docker Hub
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_PWD }}
+          
+    # Build and push
+      - name: Docker Build and push
+        uses: docker/build-push-action@v2.8.0
+        with:
+          context: ./rotten-potatoes/src
+          file: ./rotten-potatoes/src/Dockerfile
+          push: true
+          tags: |
+            dockerribeiro/rotten-potatoes:latest
+            dockerribeiro/rotten-potatoes:${{ github.run_number }}
